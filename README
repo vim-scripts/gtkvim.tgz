@@ -1,0 +1,34 @@
+This is a mirror of http://www.vim.org/scripts/script.php?script_id=160
+
+C source to 'GtkVim' widget, which embeds a gvim into your application as if it were a normal widget (actually runs a gvim as another process, displaying in your widget via a GtkSocket).
+
+The current version is for GTK2, and unfortunately requires a pached vim.  This is pending, should make it into vim 7.0 in some fashion, and may even make it into 6.4.  I'll update this note as and when a decision is made.
+
+Next step I guess is to extend GtkVim to be a full Bonobo (?) widget to allow more flexible use in applications which support that (like evolution, I think).
+
+==== Old GTK1 notes ====
+
+Versions 1.x require a GTK+ gvim 6.0 and probably GTK+ 1.2.8 or later.
+
+If you have focusing problems, you may also require the following patch to your GTK libraries (inc. the latest [at time of writing] 1.2.10) for automatic focusing (e.g., upon <Tab>) to work correctly.  Point-and-click activation will still work OK without this patch.
+
+Currently still /not/ working is the ability to set the GtkVim widget's focus at startup (gtk_widget_grab_focus() or gtk_window_set_focus()).
+
+--- gtk/gtkwindow.c.focus	Fri Mar  9 18:39:16 2001
++++ gtk/gtkwindow.c	Thu Jul  5 10:34:00 2001
+@@ -985,7 +985,13 @@
+       break;
+     case EnterNotify:
+     case LeaveNotify:
+-      if (xev->xcrossing.detail != NotifyInferior &&
++      /* We only track the actual destination of keyboard events for real
++       * toplevels, not for embedded toplevels such as GtkPlug. The reason for
++       * this is that GtkPlug redirects events so the widget may effectively not
++       * have the focus even if it actually has the focus.
++       */
++      if (gdk_window_get_parent (GTK_WIDGET (window)->window) == GDK_ROOT_PARENT () &&
++	  xev->xcrossing.detail != NotifyInferior &&
+ 	  xev->xcrossing.focus && !window->window_has_focus)
+ 	{
+ 	  window->window_has_pointer_focus = (xev->xany.type == EnterNotify) ? TRUE : FALSE;
+
