@@ -106,7 +106,7 @@ gtk_vim_init (GtkVim *vim)
     vim->server_name = NULL;
     vim->init_cols   = 0;
     vim->init_rows   = 0;
-    vim->init_files  = "";
+    vim->init_files  = NULL;
 }
 
 
@@ -152,6 +152,10 @@ gtk_vim_new (gint   init_cols,
         }
 
         va_end(args);
+    }
+    else
+    {
+        vim->init_files = g_strdup("");
     }
 
     return GTK_WIDGET (vim);
