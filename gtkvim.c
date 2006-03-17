@@ -21,13 +21,14 @@
  * Modified by the GTK+ Team and others 1997-1999.  See the AUTHORS
  * file for a list of people on the GTK+ Team.  See the ChangeLog
  * files for a list of changes.  These files are distributed with
- * GTK+ at ftp://ftp.gtk.org/pub/gtk/. 
+ * GTK+ at ftp://ftp.gtk.org/pub/gtk/.
  */
 
 
 #include "gtkvim.h"
 #include <gdk/gdkx.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
 
 /* Local data */
@@ -110,6 +111,22 @@ gtk_vim_init (GtkVim *vim)
 }
 
 
+static void
+plug_added (GtkWidget *widget,
+	    void *data)
+{
+    gtk_widget_show (widget);
+}
+
+static gboolean
+plug_removed (GtkWidget *widget,
+	      void *data)
+{
+    gtk_widget_hide (widget);
+    return TRUE;
+}
+
+
 /*
  * Args. are initial character cols/rows size of widget, plus NULL terminated
  * list of filenames to edit and/or gvim arguments.
@@ -157,6 +174,9 @@ gtk_vim_new (gint   init_cols,
     {
         vim->init_files = g_strdup("");
     }
+
+    g_signal_connect (GTK_WIDGET (vim), "plug_added", G_CALLBACK (plug_added), NULL);
+    g_signal_connect (GTK_WIDGET (vim), "plug_removed", G_CALLBACK (plug_removed), NULL);
 
     return GTK_WIDGET (vim);
 }
@@ -260,7 +280,12 @@ gtk_vim_realize (GtkWidget *widget)
 
     /* Now find XID of sub-window we're to use */
     xid_str = g_strdup_printf( "0x%X",
-        GDK_WINDOW_XWINDOW(widget->window) );
+#ifdef GTK1
+        GDK_WINDOW_XWINDOW(widget->window)
+#else
+        gtk_socket_get_id(&(vim->socket))
+#endif
+    );
     vim->server_name = g_strdup_printf( "GtkVim-%s", xid_str );
 
     /* Fork off a gvim (it forks itself) */
@@ -314,8 +339,8 @@ gtk_vim_get_server_name (GtkWidget *widget)
 {
     GtkVim *vim;
 
-    g_return_if_fail (widget != NULL);
-    g_return_if_fail (GTK_IS_VIM (widget));
+    g_return_val_if_fail (widget != NULL,  NULL);
+    g_return_val_if_fail (GTK_IS_VIM (widget),  NULL);
 
     vim = GTK_VIM (widget);
 
